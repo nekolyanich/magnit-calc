@@ -13,10 +13,10 @@ class TaskErrorMsg(BaseModel):
 
 
 class Operands(Enum):
-    add = "+"
-    sub = "-"
-    mul = "*"
-    div = "/"
+    ADD = "+"
+    SUB = "-"
+    MUL = "*"
+    DIV = "/"
 
 
 class CalcRequest(BaseModel):

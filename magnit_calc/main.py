@@ -10,7 +10,6 @@ from fastapi import Request
 
 from magnit_calc.config import settings
 from magnit_calc.models import CalcRequest
-from magnit_calc.models import Task
 from magnit_calc.models import TaskErrorMsg
 from magnit_calc.models import TaskNew
 
@@ -51,7 +50,7 @@ async def result(
 
 
 @app.get("/task_list")
-async def task_list(request: Request, ) -> list[Task]:
+async def task_list(request: Request, ) -> dict[str, list[UUID]]:
     redis = request.app.state.redis
     new = await redis.lrange(settings.queue_key, 0, -1)
     done = await redis.hkeys(settings.result_key)

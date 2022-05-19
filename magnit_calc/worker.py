@@ -14,23 +14,22 @@ from magnit_calc.config import settings
 
 
 operands = {
-    Operands.add: lambda *x: x[0] + x[1],
-    Operands.sub: lambda *x: x[0] - x[1],
-    Operands.mul: lambda *x: x[0] * x[1],
-    Operands.div: lambda *x: float(x[0]) / x[1],
-
+    Operands.ADD: lambda *x: x[0] + x[1],
+    Operands.SUB: lambda *x: x[0] - x[1],
+    Operands.MUL: lambda *x: x[0] * x[1],
+    Operands.DIV: lambda *x: float(x[0]) / x[1],
 }
 
 
-def calc(cr: CalcRequest) -> float:
-    return operands[cr.operand](cr.x, cr.y)
+def calc(calc_request: CalcRequest) -> float:
+    return operands[calc_request.operand](calc_request.x, calc_request.y)
 
 
 async def worker(
         redis: Redis,
-        queue_key: bytes,
-        result_key: bytes,
-        fail_key: bytes,
+        queue_key: str,
+        result_key: str,
+        fail_key: str,
 ) -> None:
     while True:
         _, task_pickled = await redis.brpop(queue_key)
@@ -41,7 +40,7 @@ async def worker(
                 task.id_.bytes,
                 dumps(TaskDone.from_task_new(task, calc(task.calc_request))),
             )
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             await redis.hset(
                 fail_key,
                 task.id_.bytes,

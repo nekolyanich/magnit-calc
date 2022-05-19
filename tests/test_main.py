@@ -20,14 +20,20 @@ from magnit_calc.models import TaskNew
 
 
 class RedisStub:
-    hget_values = []
-    hkeys_args = []
+    hget_values: list[bytes | None]
+    hkeys_args: list[str]
+    queue_key: str
+    task_new: bytes
+    hget_args: list[tuple[str, str]]
+    hkey_values: list[list[bytes]]
+    lrange_values: list[bytes]
+    lrange_args: tuple[str, int, int]
 
     async def rpush(self, queue_key: str, task: bytes) -> None:
         self.queue_key = queue_key
         self.task_new = task
 
-    async def hget(self, name: str, key: str) -> bytes:
+    async def hget(self, name: str, key: str) -> bytes | None:
         self.hget_args.append((name, key))
         return self.hget_values.pop()
 
@@ -47,51 +53,51 @@ async def startup():
 
 class TestMainApp(TestCase):
     @given(from_type(CalcRequest))
-    def test_register(self, cr: CalcRequest) -> None:
+    def test_register(self, calc_request: CalcRequest) -> None:
         with TestClient(app) as client:
             redis_stub: RedisStub = client.app.state.redis
-            response = client.post("/register", data=cr.json())
+            response = client.post("/register", data=calc_request.json())
             self.assertEqual(response.status_code, 200)
             self.assertEqual(redis_stub.queue_key, settings.queue_key)
             task_new_got = loads(redis_stub.task_new)
             self.assertIsInstance(task_new_got, TaskNew)
             uuid_got = UUID(response.json())
             self.assertEqual(task_new_got.id_, uuid_got)
-            self.assertEqual(task_new_got.calc_request, cr)
+            self.assertEqual(task_new_got.calc_request, calc_request)
 
     @given(from_type(TaskDone))
-    def test_result_done(self, td: TaskDone) -> None:
-        assume(isfinite(td.result))
+    def test_result_done(self, task_done: TaskDone) -> None:
+        assume(isfinite(task_done.result))
         with TestClient(app) as client:
             redis_stub: RedisStub = client.app.state.redis
             redis_stub.hget_args = []
-            redis_stub.hget_values = [dumps(td)]
-            response = client.get(f"/task/{td.id_}")
+            redis_stub.hget_values = [dumps(task_done)]
+            response = client.get(f"/task/{task_done.id_}")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
                 redis_stub.hget_args,
-                [(settings.result_key, td.id_.bytes)],
+                [(settings.result_key, task_done.id_.bytes)],
             )
-            self.assertEqual(response.json(), td.result)
+            self.assertEqual(response.json(), task_done.result)
 
     @given(from_type(TaskFailed))
-    def test_result_fail(self, tf: TaskFailed) -> None:
+    def test_result_fail(self, task_failed: TaskFailed) -> None:
         with TestClient(app) as client:
             redis_stub: RedisStub = client.app.state.redis
             redis_stub.hget_args = []
-            redis_stub.hget_values = [dumps(tf), None]
-            response = client.get(f"/task/{tf.id_}")
+            redis_stub.hget_values = [dumps(task_failed), None]
+            response = client.get(f"/task/{task_failed.id_}")
             self.assertEqual(response.status_code, 200)
             self.assertSetEqual(
                 set(redis_stub.hget_args),
                 set([
-                    (settings.result_key, tf.id_.bytes),
-                    (settings.fail_key, tf.id_.bytes),
+                    (settings.result_key, task_failed.id_.bytes),
+                    (settings.fail_key, task_failed.id_.bytes),
                 ]),
             )
             self.assertEqual(
                 response.json(),
-                TaskErrorMsg(msg=tf.error),
+                TaskErrorMsg(msg=task_failed.error),
             )
 
     @given(from_type(UUID))
@@ -127,6 +133,7 @@ class TestMainApp(TestCase):
     ) -> None:
         with TestClient(app) as client:
             redis_stub: RedisStub = client.app.state.redis
+            redis_stub.hkeys_args = []
             redis_stub.hkey_values = [
                 [i.bytes for i in fail_uuids],
                 [i.bytes for i in done_uuids],
