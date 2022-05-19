@@ -28,7 +28,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-rA -q --cov=."
+addopts = "-rA -q --cov=. --cov-fail-under=100"
 testpaths = [
     "tests",
 ]

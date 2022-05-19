@@ -4,6 +4,7 @@ from uuid import UUID
 from uuid import uuid4
 
 from aioredis import from_url
+from aioredis import Redis
 from fastapi import FastAPI
 from fastapi import Request
 
@@ -34,8 +35,11 @@ async def register(request: Request, item: CalcRequest) -> UUID:
 
 
 @app.get("/task/{task_id}")
-async def result(request: Request, task_id: UUID) -> float | TaskErrorMsg | None:
-    redis = request.app.state.redis
+async def result(
+        request: Request,
+        task_id: UUID,
+) -> float | TaskErrorMsg | None:
+    redis: Redis = request.app.state.redis
     task_id_bytes = task_id.bytes
     result_pickled = await redis.hget(settings.result_key, task_id_bytes)
     if result_pickled:
@@ -51,7 +55,7 @@ async def task_list(request: Request, ) -> list[Task]:
     redis = request.app.state.redis
     new = await redis.lrange(settings.queue_key, 0, -1)
     done = await redis.hkeys(settings.result_key)
-    fail = await redis.hkeys(settings.result_key)
+    fail = await redis.hkeys(settings.fail_key)
     return {
         "new": [loads(i).id_ for i in new],
         "done": [UUID(bytes=i) for i in done],
