@@ -48,7 +48,7 @@ async def worker(
             )
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     redis = from_url("redis://localhost")
 
     PREFIX = "MAGNIT"
