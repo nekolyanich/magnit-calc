@@ -5,7 +5,9 @@ from uuid import uuid4
 
 from aioredis import from_url
 from fastapi import FastAPI
+from fastapi import Request
 
+from magnit_calc.config import settings
 from magnit_calc.models import CalcRequest
 from magnit_calc.models import Task
 from magnit_calc.models import TaskErrorMsg
@@ -13,38 +15,43 @@ from magnit_calc.models import TaskNew
 
 
 app = FastAPI()
-redis = from_url("redis://localhost")
 
-PREFIX = "MAGNIT"
-QUEUE_KEY = PREFIX + ":NEW"
-RESULT_KEY = PREFIX + ":DONE"
-FAIL_KEY = PREFIX + ":FAIL"
+
+@app.on_event('startup')
+async def startup():
+    app.state.redis = from_url(settings.redis_url)
 
 
 @app.post("/register")
-async def register(item: CalcRequest) -> UUID:
+async def register(request: Request, item: CalcRequest) -> UUID:
+    redis = request.app.state.redis
     task_id = uuid4()
-    await redis.rpush(QUEUE_KEY, dumps(TaskNew(id_=task_id, calc_request=item)))
+    await redis.rpush(
+        settings.queue_key,
+        dumps(TaskNew(id_=task_id, calc_request=item)),
+    )
     return task_id
 
 
 @app.get("/task/{task_id}")
-async def result(task_id: UUID) -> float | TaskErrorMsg | None:
+async def result(request: Request, task_id: UUID) -> float | TaskErrorMsg | None:
+    redis = request.app.state.redis
     task_id_bytes = task_id.bytes
-    result_pickled = await redis.hget(RESULT_KEY, task_id_bytes)
+    result_pickled = await redis.hget(settings.result_key, task_id_bytes)
     if result_pickled:
         return loads(result_pickled).result
-    fail_pickled = await redis.hget(FAIL_KEY, task_id_bytes)
+    fail_pickled = await redis.hget(settings.fail_key, task_id_bytes)
     if fail_pickled:
         return TaskErrorMsg(msg=loads(fail_pickled).error)
     return None
 
 
 @app.get("/task_list")
-async def task_list() -> list[Task]:
-    new = await redis.lrange(QUEUE_KEY, 0, -1)
-    done = await redis.hkeys(RESULT_KEY)
-    fail = await redis.hkeys(FAIL_KEY)
+async def task_list(request: Request, ) -> list[Task]:
+    redis = request.app.state.redis
+    new = await redis.lrange(settings.queue_key, 0, -1)
+    done = await redis.hkeys(settings.result_key)
+    fail = await redis.hkeys(settings.result_key)
     return {
         "new": [loads(i).id_ for i in new],
         "done": [UUID(bytes=i) for i in done],

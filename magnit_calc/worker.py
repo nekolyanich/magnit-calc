@@ -10,6 +10,7 @@ from magnit_calc.models import Operands
 from magnit_calc.models import TaskDone
 from magnit_calc.models import TaskFailed
 from magnit_calc.models import TaskNew
+from magnit_calc.config import settings
 
 
 operands = {
@@ -49,10 +50,10 @@ async def worker(
 
 
 def main() -> None:  # pragma: no cover
-    redis = from_url("redis://localhost")
-
-    PREFIX = "MAGNIT"
-    QUEUE_KEY = PREFIX + ":NEW"
-    RESULT_KEY = PREFIX + ":DONE"
-    FAIL_KEY = PREFIX + ":FAIL"
-    run(worker(redis, QUEUE_KEY, RESULT_KEY, FAIL_KEY))
+    redis = from_url(settings.redis_url)
+    run(worker(
+        redis,
+        settings.queue_key,
+        settings.result_key,
+        settings.fail_key,
+    ))
