@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "magnit_calc"
+version = "0.1.0"
+description = "Homework service"
+authors = ["nekolyanich <gmail@nekolyanich.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.78.0"
+aioredis = "^2.0.1"
+hiredis = "^2.0.0"
+
+[tool.poetry.dev-dependencies]
+hypothesis = "^6.46.7"
+flake8 = "^4.0.1"
+isort = "^5.10.1"
+mypy = "^0.950"
+
+[tool.poetry.scripts]
+worker = "magnit_calc.worker:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
