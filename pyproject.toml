@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Homework service"
 authors = ["nekolyanich <gmail@nekolyanich.com>"]
 license = "MIT"
+packages = [
+  { include = "magnit_calc" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
