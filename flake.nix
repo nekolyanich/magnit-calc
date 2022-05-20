@@ -19,7 +19,6 @@
           magnit-calc-env = prev.poetry2nix.mkPoetryEnv {
             projectDir = ./.;
             python = prev.python310;
-            extraPackages = p: [p.uvicorn];
           };
         })
       ];

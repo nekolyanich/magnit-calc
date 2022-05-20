@@ -13,6 +13,7 @@ python = "^3.10"
 fastapi = "^0.78.0"
 aioredis = "^2.0.1"
 hiredis = "^2.0.0"
+uvicorn = "^0.17.6"
 
 [tool.poetry.dev-dependencies]
 hypothesis = "^6.46.7"
@@ -25,6 +26,7 @@ pylint = "^2.13.9"
 
 [tool.poetry.scripts]
 worker = "magnit_calc.worker:main"
+server = "magnit_calc.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

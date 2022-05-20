@@ -7,6 +7,7 @@ from aioredis import from_url
 from aioredis import Redis
 from fastapi import FastAPI
 from fastapi import Request
+from uvicorn import run  # type: ignore
 
 from magnit_calc.config import settings
 from magnit_calc.models import CalcRequest
@@ -60,3 +61,7 @@ async def task_list(request: Request, ) -> dict[str, list[UUID]]:
         "done": [UUID(bytes=i) for i in done],
         "fail": [UUID(bytes=i) for i in fail],
     }
+
+
+def main() -> None:  # pragma: no cover
+    run("magnit_calc.main:app")
