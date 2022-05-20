@@ -12,13 +12,14 @@
         poetry2nix.overlay
         (final: prev: {
           # The application
-          magint-calc = prev.poetry2nix.mkPoetryApplication {
+          magnit-calc = prev.poetry2nix.mkPoetryApplication {
             projectDir = ./.;
             python = prev.python310;
           };
-          magint-calc-env = prev.poetry2nix.mkPoetryEnv {
+          magnit-calc-env = prev.poetry2nix.mkPoetryEnv {
             projectDir = ./.;
             python = prev.python310;
+            extraPackages = p: [p.uvicorn];
           };
         })
       ];
@@ -31,16 +32,15 @@
       in
       {
         apps = {
-          magint-calc = pkgs.magint-calc;
+          magnit-calc = pkgs.magnit-calc;
         };
-        defaultApp = pkgs.magint-calc;
-      devShell = pkgs.mkShell {
-        nativeBuildInputs = [
-          pkgs.python310Packages.poetry
-          pkgs.python310Packages.uvicorn
-          pkgs.magint-calc-env
-          pkgs.redis
-        ];
-      };
+        defaultApp = pkgs.magnit-calc;
+        devShell = pkgs.mkShell {
+          nativeBuildInputs = [
+            pkgs.python310Packages.poetry
+            pkgs.magnit-calc-env
+            pkgs.redis
+          ];
+        };
       }));
 }
